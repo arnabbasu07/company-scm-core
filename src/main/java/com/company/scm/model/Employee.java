@@ -1,9 +1,11 @@
 package com.company.scm.model;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Employee {
+public class Employee implements Serializable{
 
+	private static final long serialVersionUID = 1L;
 	private int employeeId;
 	private String name;
 	private String department;

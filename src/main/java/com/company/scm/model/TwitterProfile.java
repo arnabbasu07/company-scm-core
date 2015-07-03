@@ -1,9 +1,11 @@
 package com.company.scm.model;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class TwitterProfile {
+public class TwitterProfile implements Serializable{
 
+	private static final long serialVersionUID = 1L;
 	private int employeeId;
 	private String name;
 	private String department;
@@ -14,6 +16,7 @@ public class TwitterProfile {
 	private List<String> languages;
 	private String timezone;
 	private List<String> friendlist;
+	private Long twitterId;
 	public int getEmployeeId() {
 		return employeeId;
 	}
@@ -73,6 +76,13 @@ public class TwitterProfile {
 	}
 	public void setTimezone(String timezone) {
 		this.timezone = timezone;
+	}
+	
+	public Long getTwitterId() {
+		return twitterId;
+	}
+	public void setTwitterId(Long twitterId) {
+		this.twitterId = twitterId;
 	}
 	@Override
 	public String toString(){
