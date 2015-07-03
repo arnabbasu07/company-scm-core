@@ -4,9 +4,11 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -22,8 +24,11 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.util.CollectionsUtils;
 
 import scala.Tuple2;
+import simpack.measure.external.alignapi.JaroWinkler;
+import simpack.measure.external.secondstring.Levenshtein;
 
 import com.company.commons.core.CommonFunctions;
 import com.company.commons.core.HadoopPaths;
@@ -188,11 +193,36 @@ public class EstimateSocialDistance {
 							fsb = new StringBuffer();
 							fsb.append(",");
 							fsb.append(t._1);
-							
+							Iterator<TwitterProfile> it = t._2._2.iterator();
+							while(it.hasNext()){
+								TwitterProfile twProfile = it.next();
+								fsb.append(",");
+								fsb.append(nameMatch(t._2._1.getName(), twProfile.getName()));
+								fsb.append(",");
+								fsb.append((t._2._1.getDepartment().isEmpty()||twProfile.getDepartment().isEmpty())?0:
+									max(new Levenshtein(t._2._1.getDepartment(), twProfile.getDepartment()).getSimilarity(),new JaroWinkler(t._2._1.getDepartment(), twProfile.getDepartment()).getSimilarity()));
+								fsb.append(",");
+								fsb.append((t._2._1.getGender().isEmpty()||twProfile.getGender().isEmpty())?0:
+									max(new Levenshtein(t._2._1.getGender(), twProfile.getGender()).getSimilarity(),new JaroWinkler(t._2._1.getGender(), twProfile.getGender()).getSimilarity()));
+								fsb.append(",");
+								fsb.append((t._2._1.getDesignation().isEmpty()||twProfile.getDesignation().isEmpty())?0:
+									max(new Levenshtein(t._2._1.getDesignation(), twProfile.getDesignation()).getSimilarity(),new JaroWinkler(t._2._1.getDesignation(), twProfile.getDesignation()).getSimilarity()));
+								fsb.append(",");
+								fsb.append((t._2._1.getLocation().isEmpty()||twProfile.getLocation().isEmpty())?0:
+									max(new Levenshtein(t._2._1.getLocation(), twProfile.getLocation()).getSimilarity(),new JaroWinkler(t._2._1.getLocation(), twProfile.getLocation()).getSimilarity()));
+								fsb.append(",");
+								fsb.append((t._2._1.getEmailId().isEmpty()||twProfile.getEmailId().isEmpty())?0:
+									max(new Levenshtein(t._2._1.getEmailId(), twProfile.getEmailId()).getSimilarity(),new JaroWinkler(t._2._1.getEmailId(), twProfile.getEmailId()).getSimilarity()));
+								fsb.append(",");
+								fsb.append(CollectionUtils.intersection(t._2._1.getLanguages(), twProfile.getLanguages()).size()/max(t._2._1.getLanguages().size(),twProfile.getLanguages().size()));
+								fsb.append(",");
+								for(String e :elist){
+									
+								}
+							}
 							
 						}
 					});
-			System.out.println(joinedPairRDD.count());
 			
 		}catch(Exception e){
 			e.printStackTrace();
@@ -204,6 +234,8 @@ public class EstimateSocialDistance {
 		
 		return 1.0;
 	}
+	static double max(double a, double b)
+	{   return (a > b)? a : b; }
 	public static void main(String[] args) {
 		String[] fpaths = {"/home/hduser/work/Employees_cafyne.csv","/home/hduser/work/TwitterProfiles_cafyne.csv","/home/hduser/work/TwitterProfiles_cafyne_2.csv","/home/hduser/work/DataDefinition.csv","/user/dev11/output"};
 		estimateSocialDistance(fpaths);
