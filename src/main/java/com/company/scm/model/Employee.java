@@ -2,7 +2,7 @@ package com.company.scm.model;
 
 import java.util.List;
 
-public class TwitterProfile {
+public class Employee {
 
 	private int employeeId;
 	private String name;
@@ -12,8 +12,8 @@ public class TwitterProfile {
 	private String location;
 	private String emailId;
 	private List<String> languages;
-	private String timezone;
 	private List<String> friendlist;
+	
 	public int getEmployeeId() {
 		return employeeId;
 	}
@@ -68,28 +68,5 @@ public class TwitterProfile {
 	public void setFriendlist(List<String> friendlist) {
 		this.friendlist = friendlist;
 	}
-	public String getTimezone() {
-		return timezone;
-	}
-	public void setTimezone(String timezone) {
-		this.timezone = timezone;
-	}
-	@Override
-	public String toString(){
-		/**
-		 * Implement to String
-		 */
-		return "";
-	}
-
-	@Override
-	public boolean equals(Object o){
-
-		return false;
-	}
-	@Override
-	public int hashCode() {
-
-		return 0;
-	}
+	
 }
