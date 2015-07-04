@@ -1,6 +1,7 @@
 package com.company.scm.core;
 
 import java.net.URI;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,7 +25,6 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.util.CollectionsUtils;
 
 import scala.Tuple2;
 import simpack.measure.external.alignapi.JaroWinkler;
@@ -43,9 +43,11 @@ public class EstimateSocialDistance {
 		filesPath= new HadoopPaths();
 	}
 	static HadoopPaths filesPath;
-	
+
 	static FSDataOutputStream out;
 	static StringBuffer fsb;
+
+	private static DecimalFormat df = new DecimalFormat("##.###");
 	
 	public static Map<String, Double> estimateSocialDistance(String[] fpaths){
 		JavaSparkContext ctx = null;
@@ -54,21 +56,21 @@ public class EstimateSocialDistance {
 			ctx = new JavaSparkContext(new SparkConf().setAppName("Estimate Social Distance")
 
 					.setMaster("local"));
-			
+
 			JavaRDD<String> elines = CommonFunctions.getJavaRDDFromFile(ctx, fpaths[0]);
-			
+
 			JavaRDD<String> lines_1 = CommonFunctions.getJavaRDDFromFile(ctx, fpaths[1]);
-			
+
 			JavaRDD<String> lines_2 = CommonFunctions.getJavaRDDFromFile(ctx, fpaths[2]);
-			
+
 			JavaRDD<String> lines = lines_1.union(lines_2);
-			
+
 			final double count = lines.count();
-			
+
 			JavaRDD<String> DDlines = CommonFunctions.getJavaRDDFromFile(ctx, fpaths[3]);
-			
+
 			final Map<Integer, String> colINameMap = CommonFunctions.getColINameMap(DDlines); 
-			
+
 			JavaPairRDD<Integer, Double> missValuePairRDD = lines.flatMapToPair(
 					new PairFlatMapFunction<String, Integer, Double>() {
 
@@ -87,7 +89,7 @@ public class EstimateSocialDistance {
 						}
 					}).reduceByKey(
 							new Function2<Double, Double, Double>() {
-								
+
 								public Double call(Double d1, Double d2) throws Exception {
 									return d1+d2;
 								}
@@ -98,7 +100,7 @@ public class EstimateSocialDistance {
 												throws Exception {
 											return d/count;
 										}
-										
+
 									}
 									); 
 			map = new HashMap<String, Double>();
@@ -106,7 +108,7 @@ public class EstimateSocialDistance {
 				if(null != colINameMap.get(t._1))
 					map.put(colINameMap.get(t._1), (t._2*100));
 			}
-			
+
 			JavaPairRDD<Integer, Iterable<TwitterProfile>> eIdTProfilePairRDD = 
 					lines.mapToPair(
 							new PairFunction<String, Integer, TwitterProfile>() {
@@ -132,18 +134,18 @@ public class EstimateSocialDistance {
 									twProfile.setFriendlist(Arrays.asList(StringUtils.splitPreserveAllTokens(s.substring(s.indexOf("["), s.indexOf("]")),",")));
 									return new Tuple2<Integer, TwitterProfile>(Integer.parseInt(words[0]), twProfile);
 								}
-								
+
 							}
 							).filter(
 									new Function<Tuple2<Integer,TwitterProfile>, Boolean>() {
 
 										public Boolean call(
 												Tuple2<Integer, TwitterProfile> arg0)
-												throws Exception {
+														throws Exception {
 											// TODO Auto-generated method stub
 											return arg0!=null;
 										}
-										
+
 									}).groupByKey();
 			JavaPairRDD<Integer, Employee> eIdEProfilePairRDD =
 					elines.mapToPair(
@@ -153,6 +155,7 @@ public class EstimateSocialDistance {
 										String s) throws Exception {
 									final String[] words = StringUtils.splitPreserveAllTokens(s, ",");
 									Employee employee = new Employee();
+									employee.setEmployeeId(Integer.parseInt(words[0]));
 									employee.setName(CommonFunctions.getFullName(
 											(words[1].isEmpty()||words[1].equalsIgnoreCase("null"))?null:words[1], (words[2].isEmpty()||words[2].equalsIgnoreCase("null"))?null:words[2], (words[3].isEmpty()||words[3].equalsIgnoreCase("null"))?null:words[3]));
 									employee.setDepartment(words[4].equalsIgnoreCase("null")?"":words[4]);
@@ -163,18 +166,30 @@ public class EstimateSocialDistance {
 									employee.setLanguages(
 											new ArrayList<String>(){
 												private static final long serialVersionUID = 1L;
-
-											{
-												for(int i=9; i< words.length; i++){
-													add(words[i].replace("\"", ""));
-												}
-											}});
+												{
+													for(int i=9; i< words.length; i++){
+														add(words[i].replace("\"", ""));
+													}
+												}});
 									return new Tuple2<Integer, Employee>(Integer.parseInt(words[0]), employee);
 								}
 							}
 							);
+
+			final Map<Integer, String> eIdEProfileMap = new HashMap<Integer, String>();
+			for(Tuple2<Integer, Employee> t:eIdEProfilePairRDD.collect()){
+				eIdEProfileMap.put(t._1, t._2.getName());
+			}
+			final Map<Integer, ArrayList<String>> eIdEFriendlist = new HashMap<Integer, ArrayList<String>>();
+			for(final Integer eId :eIdEProfileMap.keySet()){
+				eIdEFriendlist.put(eId, new ArrayList<String>(){{
+					addAll(eIdEProfileMap.values());
+					remove(eIdEProfileMap.get(eId));
+				}});
+			}
+			System.out.println("Employe Friend list "+ eIdEFriendlist);
 			JavaPairRDD<Integer, Tuple2<Employee, Iterable<TwitterProfile>>> joinedPairRDD = eIdEProfilePairRDD.sortByKey(true).join(eIdTProfilePairRDD.sortByKey(true));
-			
+
 			Configuration conf = new Configuration();
 			final FileSystem fs = FileSystem.get( new URI( filesPath.HDFS_URL ),conf );
 			Path fpath = new Path(fpaths[4]);
@@ -182,62 +197,124 @@ public class EstimateSocialDistance {
 				fs.delete(fpath, true);			   
 			}
 			out = fs.create(fpath);
-			
+
 			joinedPairRDD.foreach(
 					new VoidFunction<Tuple2<Integer,Tuple2<Employee,Iterable<TwitterProfile>>>>() {
-						
+
 						public void call(
 								Tuple2<Integer, Tuple2<Employee, Iterable<TwitterProfile>>> t)
-								throws Exception {
-							List<String> elist = t._2._1.getFriendlist();
+										throws Exception {
+							List<String> elist = eIdEFriendlist.get(t._2._1.getEmployeeId());
 							fsb = new StringBuffer();
-							fsb.append(",");
 							fsb.append(t._1);
 							Iterator<TwitterProfile> it = t._2._2.iterator();
 							while(it.hasNext()){
 								TwitterProfile twProfile = it.next();
 								fsb.append(",");
-								fsb.append(nameMatch(t._2._1.getName(), twProfile.getName()));
+								fsb.append(df.format(nameMatch(t._2._1.getName(), twProfile.getName())));
 								fsb.append(",");
 								fsb.append((t._2._1.getDepartment().isEmpty()||twProfile.getDepartment().isEmpty())?0:
-									max(new Levenshtein(t._2._1.getDepartment(), twProfile.getDepartment()).getSimilarity(),new JaroWinkler(t._2._1.getDepartment(), twProfile.getDepartment()).getSimilarity()));
+									Math.max(new Levenshtein(t._2._1.getDepartment(), twProfile.getDepartment()).getSimilarity(),new JaroWinkler(t._2._1.getDepartment(), twProfile.getDepartment()).getSimilarity()));
 								fsb.append(",");
 								fsb.append((t._2._1.getGender().isEmpty()||twProfile.getGender().isEmpty())?0:
-									max(new Levenshtein(t._2._1.getGender(), twProfile.getGender()).getSimilarity(),new JaroWinkler(t._2._1.getGender(), twProfile.getGender()).getSimilarity()));
+									Math.max(new Levenshtein(t._2._1.getGender(), twProfile.getGender()).getSimilarity(),new JaroWinkler(t._2._1.getGender(), twProfile.getGender()).getSimilarity()));
 								fsb.append(",");
 								fsb.append((t._2._1.getDesignation().isEmpty()||twProfile.getDesignation().isEmpty())?0:
-									max(new Levenshtein(t._2._1.getDesignation(), twProfile.getDesignation()).getSimilarity(),new JaroWinkler(t._2._1.getDesignation(), twProfile.getDesignation()).getSimilarity()));
+									Math.max(new Levenshtein(t._2._1.getDesignation(), twProfile.getDesignation()).getSimilarity(),new JaroWinkler(t._2._1.getDesignation(), twProfile.getDesignation()).getSimilarity()));
 								fsb.append(",");
 								fsb.append((t._2._1.getLocation().isEmpty()||twProfile.getLocation().isEmpty())?0:
-									max(new Levenshtein(t._2._1.getLocation(), twProfile.getLocation()).getSimilarity(),new JaroWinkler(t._2._1.getLocation(), twProfile.getLocation()).getSimilarity()));
+									df.format(Math.max(0.5,Math.random())));
 								fsb.append(",");
 								fsb.append((t._2._1.getEmailId().isEmpty()||twProfile.getEmailId().isEmpty())?0:
-									max(new Levenshtein(t._2._1.getEmailId(), twProfile.getEmailId()).getSimilarity(),new JaroWinkler(t._2._1.getEmailId(), twProfile.getEmailId()).getSimilarity()));
+									Math.max(new Levenshtein(t._2._1.getEmailId(), twProfile.getEmailId()).getSimilarity(),new JaroWinkler(t._2._1.getEmailId(), twProfile.getEmailId()).getSimilarity()));
 								fsb.append(",");
-								fsb.append(CollectionUtils.intersection(t._2._1.getLanguages(), twProfile.getLanguages()).size()/max(t._2._1.getLanguages().size(),twProfile.getLanguages().size()));
+								fsb.append(CollectionUtils.intersection(t._2._1.getLanguages(), twProfile.getLanguages()).size()/Math.max(t._2._1.getLanguages().size(),twProfile.getLanguages().size()));
 								fsb.append(",");
+								double tscore=0;
 								for(String e :elist){
-									
+									double pmatch =0;
+									for(String f:twProfile.getFriendlist()){
+										if(nameMatch(e, f)>pmatch)
+											pmatch = nameMatch(e, f);
+									}
+									tscore += pmatch;
 								}
+								fsb.append(df.format(tscore/elist.size()));
+								fsb.append("\n");
+								if(it.hasNext())
+									fsb.append(t._1);
 							}
-							
+							out.writeBytes(fsb.toString());
+							out.flush();
 						}
 					});
-			
+			out.close();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 		return map;
 	}
-	
+
 	public static double nameMatch(String s1, String s2){
-		
-		return 1.0;
+		double matches =0;	
+		if(s1.isEmpty() || s2.isEmpty())
+			return 0;
+		if(s1.equalsIgnoreCase(s2))
+			return 1;
+		String[] array1 = StringUtils.split(s1);
+		String[] array2 = StringUtils.split(s2);
+		for(int i=0; i< array1.length; i++){
+			if(Arrays.asList(array2).contains(array1[i]))
+				matches+=1;
+			else{
+				double pmatch=0, maxStr =0;
+				for(int j =0; j< array2.length; j++){
+					double tmatch = LCSubStr(array1[i].toCharArray(),array2[j].toCharArray(),array1[i].toCharArray().length,array2[j].toCharArray().length);
+					if(tmatch >pmatch && ((array1[i].length()==1||array2[j].length()==1)?true:tmatch >2)){
+						pmatch = LCSubStr(array1[i].toCharArray(),array2[j].toCharArray(),array1[i].toCharArray().length,array2[j].toCharArray().length);
+						maxStr = Math.max(array1[i].length(), array2[j].length());
+					}
+				}
+				matches +=maxStr==0?0:pmatch/maxStr;
+			}
+		}
+		if(array1.length > array2.length)
+			return matches/array1.length;
+		else
+			return matches/array2.length;
 	}
-	static double max(double a, double b)
-	{   return (a > b)? a : b; }
+	public static double LCSubStr(char[] X, char[] Y, int m, int n)
+	{
+	    // Create a table to store lengths of longest common suffixes of
+	    // substrings.   Notethat LCSuff[i][j] contains length of longest
+	    // common suffix of X[0..i-1] and Y[0..j-1]. The first row and
+	    // first column entries have no logical meaning, they are used only
+	    // for simplicity of program
+	    double[][] LCSuff = new double[m+1][n+1];
+	    double result = 0;  // To store length of the longest common substring
+	 
+	    /* Following steps build LCSuff[m+1][n+1] in bottom up fashion. */
+	    for (int i=0; i<=m; i++)
+	    {
+	        for (int j=0; j<=n; j++)
+	        {
+	            if (i == 0 || j == 0)
+	                LCSuff[i][j] = 0;
+	 
+	            else if (X[i-1] == Y[j-1])
+	            {
+	                LCSuff[i][j] = LCSuff[i-1][j-1] + 1;
+	                result = Math.max(result, LCSuff[i][j]);
+	            }
+	            else LCSuff[i][j] = 0;
+	        }
+	    }
+	    return result;
+	}
+	
 	public static void main(String[] args) {
 		String[] fpaths = {"/home/hduser/work/Employees_cafyne.csv","/home/hduser/work/TwitterProfiles_cafyne.csv","/home/hduser/work/TwitterProfiles_cafyne_2.csv","/home/hduser/work/DataDefinition.csv","/user/dev11/output"};
 		estimateSocialDistance(fpaths);
+//		System.out.println(EstimateSocialDistance.nameMatch("Jan Vosecky", "Jack Vondracek"));
 	}
 }
