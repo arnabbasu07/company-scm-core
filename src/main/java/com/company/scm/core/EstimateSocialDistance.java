@@ -219,7 +219,7 @@ public class EstimateSocialDistance {
 								fsb.append(",");
 								fsb.append(twProfile.getTwitterId());
 								fsb.append(",");
-								fsb.append(df.format(nameMatch(t._2._1.getName(), twProfile.getName())));
+								fsb.append(df.format(CommonFunctions.nameMatch(t._2._1.getName(), twProfile.getName())));
 								if(null !=twProfile.getDepartment()){
 									fsb.append(",");
 									fsb.append((t._2._1.getDepartment().isEmpty()||twProfile.getDepartment().isEmpty())?0:
@@ -250,15 +250,15 @@ public class EstimateSocialDistance {
 								if(null !=twProfile.getTimezone()){
 									fsb.append(",");
 									fsb.append((t._2._1.getTimezone().isEmpty()||twProfile.getTimezone().isEmpty())?0:
-										df.format(Math.max(new LevensteinDistance().getDistance(t._2._1.getTimezone(), twProfile.getTimezone()),new JaroWinklerDistance().getDistance(t._2._1.getTimezone(), twProfile.getTimezone()))));
+										df.format(CommonFunctions.nameMatch(t._2._1.getTimezone(), twProfile.getTimezone())));
 								}
 								fsb.append(",");
 								double tscore=0;
 								for(String e :elist){
 									double pmatch =0;
 									for(String f:twProfile.getFriendlist()){
-										if(nameMatch(e, f)>pmatch)
-											pmatch = nameMatch(e, f);
+										if(CommonFunctions.nameMatch(e, f)>pmatch)
+											pmatch = CommonFunctions.nameMatch(e, f);
 									}
 									tscore += pmatch;
 								}
@@ -278,7 +278,7 @@ public class EstimateSocialDistance {
 		return map;
 	}
 
-	public static double nameMatch(String s1, String s2){
+	/*public static double nameMatch(String s1, String s2){
 		double matches =0;	
 		if(s1.isEmpty() || s2.isEmpty())
 			return 0;
@@ -292,9 +292,9 @@ public class EstimateSocialDistance {
 			else{
 				double pmatch=0, maxStr =0;
 				for(int j =0; j< array2.length; j++){
-					double tmatch = LCSubStr(array1[i].toCharArray(),array2[j].toCharArray(),array1[i].toCharArray().length,array2[j].toCharArray().length);
+					double tmatch = LongestCommonSubstring(array1[i].toCharArray(),array2[j].toCharArray(),array1[i].toCharArray().length,array2[j].toCharArray().length);
 					if(tmatch >pmatch && ((array1[i].length()==1||array2[j].length()==1)?true:tmatch >2)){
-						pmatch = LCSubStr(array1[i].toCharArray(),array2[j].toCharArray(),array1[i].toCharArray().length,array2[j].toCharArray().length);
+						pmatch = LongestCommonSubstring(array1[i].toCharArray(),array2[j].toCharArray(),array1[i].toCharArray().length,array2[j].toCharArray().length);
 						maxStr = Math.max(array1[i].length(), array2[j].length());
 					}
 				}
@@ -306,7 +306,7 @@ public class EstimateSocialDistance {
 		else
 			return matches/array2.length;
 	}
-	public static double LCSubStr(char[] X, char[] Y, int m, int n)
+	public static double LongestCommonSubstring(char[] X, char[] Y, int m, int n)
 	{
 		// Create a table to store lengths of longest common suffixes of
 		// substrings.   Notethat LCSuff[i][j] contains length of longest
@@ -316,7 +316,7 @@ public class EstimateSocialDistance {
 		double[][] LCSuff = new double[m+1][n+1];
 		double result = 0;  // To store length of the longest common substring
 
-		/* Following steps build LCSuff[m+1][n+1] in bottom up fashion. */
+		 Following steps build LCSuff[m+1][n+1] in bottom up fashion. 
 		for (int i=0; i<=m; i++)
 		{
 			for (int j=0; j<=n; j++)
@@ -333,7 +333,7 @@ public class EstimateSocialDistance {
 			}
 		}
 		return result;
-	}
+	}*/
 
 	public static void main(String[] args) {
 		String[] fpaths = {"/home/hduser/work/Employees_cafyne.csv","/home/hduser/work/TwitterProfiles_cafyne.csv","/home/hduser/work/TwitterProfiles_cafyne_2.csv","/home/hduser/work/DataDefinition.csv","/user/dev11/output"};
