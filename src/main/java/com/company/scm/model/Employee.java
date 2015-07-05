@@ -15,6 +15,7 @@ public class Employee implements Serializable{
 	private String emailId;
 	private List<String> languages;
 	private List<String> friendlist;
+	private String timezone;
 	
 	public int getEmployeeId() {
 		return employeeId;
@@ -69,6 +70,12 @@ public class Employee implements Serializable{
 	}
 	public void setFriendlist(List<String> friendlist) {
 		this.friendlist = friendlist;
+	}
+	public String getTimezone() {
+		return timezone;
+	}
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
 	}
 	
 }
