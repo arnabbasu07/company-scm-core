@@ -65,59 +65,73 @@ public class AdjacencyList {
 							sb.append("\n");
 							Thread.sleep(65000l);
 							long cursor_2 = -1;
-							int depth_2 = 0;
 							IDs friendslist_2 = null;
-							do{
-								friendslist_2 = twitter.getFriendsIDs(ids[i], cursor_2);
-								long[] ids_2 = friendslist_2.getIDs();
-								for(int j=0; j < ids_2.length; j++){
-									Random random_2 = new Random();
-									if(random_2.nextDouble() <= 0.9)
-										continue;
-									sb.append(ids[i]);
-									sb.append(" ");
-									sb.append(ids_2[j]);
-									sb.append("\n");
-									Thread.sleep(130000l);
-									long cursor_3 = -1;
-									int depth_3 = 0;
-									IDs friendslist_3 = null;
-									do{
-										friendslist_3 = twitter.getFriendsIDs(ids_2[j], cursor_3);
-										long[] ids_3 = friendslist_3.getIDs();
-										for(int k=0; k < ids_3.length; k++){
-											Random random_3 = new Random();
-											if(random_3.nextDouble() <= 0.95)
-												continue;
-											sb.append(ids_2[j]);
-											sb.append(" ");
-											sb.append(ids_3[k]);
-											sb.append("\n");
-											depth_3++;
-											if(depth_3 > depth3)
+							try{
+								int depth_2 = 0;
+								do{
+									friendslist_2 = twitter.getFriendsIDs(ids[i], cursor_2);
+									long[] ids_2 = friendslist_2.getIDs();
+									for(int j=0; j < ids_2.length; j++){
+										Random random_2 = new Random();
+										if(random_2.nextDouble() <= 0.9)
+											continue;
+										sb.append(ids[i]);
+										sb.append(" ");
+										sb.append(ids_2[j]);
+										sb.append("\n");
+										Thread.sleep(130000l);
+										long cursor_3 = -1;
+										IDs friendslist_3 = null;
+										try{
+											int depth_3 = 0;
+											do{
+												friendslist_3 = twitter.getFriendsIDs(ids_2[j], cursor_3);
+												long[] ids_3 = friendslist_3.getIDs();
+												for(int k=0; k < ids_3.length; k++){
+													Random random_3 = new Random();
+													if(random_3.nextDouble() <= 0.95)
+														continue;
+													sb.append(ids_2[j]);
+													sb.append(" ");
+													sb.append(ids_3[k]);
+													sb.append("\n");
+													depth_3++;
+													if(depth_3 > depth3)
+														break;
+												}
+												Thread.sleep(65000l);
+											}while((cursor_3 = friendslist_3.getNextCursor())!=0 && depth_3 < depth3);
+											depth_2++;
+											if(depth_2 > depth2)
 												break;
+										}catch(TwitterException e){
+											e.printStackTrace();
 										}
-										Thread.sleep(65000l);
-									}while((cursor_3 = friendslist_3.getNextCursor())!=0 && depth_3 < depth3);
-								depth_2++;
-								if(depth_2 > depth2)
+									}
+									Thread.sleep(80000l);
+								}while((cursor_2 = friendslist_2.getNextCursor())!=0 && depth_2 < depth2);
+								depth_1++;
+								if(depth_1 > depth1)
 									break;
-								}
-								Thread.sleep(80000l);
-							}while((cursor_2 = friendslist_2.getNextCursor())!=0 && depth_2 < depth2);
-							depth_1++;
-							if(depth_1 > depth1)
-								break;
+							}catch(TwitterException e){
+								e.printStackTrace();
+							}
+
 						}
-//						System.out.println(" user's friends list "+ sb);
+						//						System.out.println(" user's friends list "+ sb);
 						Thread.sleep(900001l);
 					} while((cursor = friendlist.getNextCursor())!=0 && depth_1 < depth1);
-				}catch(Exception e){
+				}catch(TwitterException e){
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				System.out.println(" User Profile "+sb);
-				bw.write(sb+"\n");
-				bw.flush();
+				if(!sb.toString().isEmpty()){
+					System.out.println(" User Profile "+sb);
+					bw.write(sb+"\n");
+					bw.flush();
+				}
 				list.add(query);
 			}
 		}catch (FileNotFoundException e) {
@@ -130,7 +144,7 @@ public class AdjacencyList {
 	public static void main(String[] args) {
 		AdjacencyList adjList = new AdjacencyList();
 		try {
-			adjList.getTwitterFriendsList("/home/hduser/work/profile_list_2.csv", "/home/hduser/work/friendslist_3.csv", 100, 10, 1);
+			adjList.getTwitterFriendsList("/home/hduser/work/profile_Id_list_4.csv", "/home/hduser/work/friendslist_5.csv", 100, 10, 1);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

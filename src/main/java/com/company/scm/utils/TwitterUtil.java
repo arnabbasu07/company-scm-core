@@ -50,7 +50,9 @@ public class TwitterUtil {
 
 	public static void searchTweets(List<String> keywords,String date){ 
 		int max_tweets = 3000; 
-		Twitter twitter = getTwitterInstance(); 
+		twitter4j.conf.Configuration conf = SocialNetworkUtils.createTwitterConfiguration();//getTwitterInstance(); 
+		TwitterFactory twitterFactory = new TwitterFactory(conf);
+		Twitter twitter = twitterFactory.getInstance();
 		for(String key :keywords){ 
 			boolean fileSave = false; 
 			String home = System.getProperty("user.home"); 
@@ -76,11 +78,11 @@ public class TwitterUtil {
 					result = twitter.search(query); 
 					List<Status> tweets = result.getTweets(); 
 					for (Status tweet : tweets) { 
-						writer.write(tweet.getText()+"\n");
+						writer.write(tweet.getUser().getId()+"\t"+tweet.getText()+"\n");
 					} 
 					count++; 
 					writer.flush(); 
-					Thread.sleep(60000l); 
+					Thread.sleep(65000l); 
 				} while ((query = result.nextQuery()) != null && count < max_tweets); 
 				writer.close(); 
 				fileSave = true; 
@@ -102,10 +104,10 @@ public class TwitterUtil {
 			} 
 		} 
 		FileSystem hdfs =null; 
-		Configuration conf = new Configuration(); 
+		Configuration conf1 = new Configuration(); 
 		String home = System.getProperty("user.home"); 
 		try{ 
-			hdfs = FileSystem.get( new URI( filesPath.HDFS_URL ), conf); 
+			hdfs = FileSystem.get( new URI( filesPath.HDFS_URL ), conf1); 
 			for(String key :keywords){ 
 				Path localFilePath = new Path(home+File.separator+key+".txt"); 
 				Path modelPath = new Path("/user/dev11"+File.separator+key+".txt"); 
@@ -208,20 +210,44 @@ public class TwitterUtil {
 
 	public static void main(String[] args) { 
 		List<String> keywords = new ArrayList<String>(); 
-		keywords.add("vmware"); 
-		keywords.add("VMworld"); 
-		keywords.add("Virtualization"); 
-		keywords.add("vcloud"); 
-		keywords.add("vsphere"); 
-		keywords.add("vspp"); 
-		keywords.add("Virtual Hybrid Cloud"); 
+		keywords.add("Outlook.com"); 
+		keywords.add("Bing"); 
+		keywords.add("OneDrive"); 
+		keywords.add("MSN"); 
+		keywords.add("Microsoft Azure"); 
+		keywords.add("Windows Live"); 
+		keywords.add("HomeOS");
+		keywords.add("Windows Media Player"); 
+		keywords.add("Age of Empires"); 
+		keywords.add("Age of Mythology"); 
+		keywords.add("Dead Rising 3"); 
+		keywords.add("Windows 10"); 
+		keywords.add("Windows 7"); 
+		keywords.add("Windows Server 2012"); 
+		keywords.add("Code-view");
+		keywords.add("AutoCollage 2008"); 
+		keywords.add("Microsoft Expression Studio"); 
+		keywords.add("Windows Live Movie Maker"); 
+		keywords.add("Skype"); 
+		keywords.add("Microsoft Silverlight"); 
+		keywords.add("So.cl"); 
+		keywords.add("Windows Live Mail"); 
+		keywords.add("Office 365"); 
+		keywords.add("Microsoft Access"); 
+		keywords.add("Microsoft OneNote"); 
+		keywords.add("Microsoft Office"); 
+		keywords.add("Microsoft Visio"); 
+		keywords.add("Microsoft SharePoint Workspace"); 
+		keywords.add("Microsoft Project"); 
+		keywords.add("Microsoft Publisher"); 
+		keywords.add("Microsoft Lync"); 
 		Calendar calendar = Calendar.getInstance(); 
-		calendar.set(Calendar.YEAR, 2011); 
-		calendar.set(Calendar.MONTH, 9); 
-		calendar.set(Calendar.DAY_OF_MONTH, 9); // new years eve 
+		calendar.set(Calendar.YEAR, 2014); 
+		calendar.set(Calendar.MONTH, 8); 
+		calendar.set(Calendar.DAY_OF_MONTH, 10); // new years eve 
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd"); 
 		TwitterUtil.searchTweets(keywords, format.format(calendar.getTime()));
-		String[] fpaths = {"file:///home/dev11/work/twitter_ids_full.csv","hdfs://localhost:9000/user/dev11/"}; 
-		TwitterUtil.getUsersTimeLine(fpaths); 
+		/*String[] fpaths = {"file:///home/dev11/work/twitter_ids_full.csv","hdfs://localhost:9000/user/dev11/"}; 
+		TwitterUtil.getUsersTimeLine(fpaths); */
 	} 
 }
