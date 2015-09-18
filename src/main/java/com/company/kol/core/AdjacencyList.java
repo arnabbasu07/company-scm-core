@@ -144,7 +144,7 @@ public class AdjacencyList {
 	public static void main(String[] args) {
 		AdjacencyList adjList = new AdjacencyList();
 		try {
-			adjList.getTwitterFriendsList("/home/hduser/work/profile_Id_list_4.csv", "/home/hduser/work/friendslist_5.csv", 100, 10, 1);
+			adjList.getTwitterFriendsList("/home/hduser/work/profile_Id_list_4.csv", "/home/hduser/work/friendslist_5.csv", 50, 5, 1);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

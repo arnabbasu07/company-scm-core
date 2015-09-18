@@ -2,16 +2,20 @@ package com.company.scm.utils;
 
 import java.io.BufferedWriter; 
 import java.io.File; 
+import java.io.FileNotFoundException;
 import java.io.FileWriter; 
 import java.io.IOException; 
 import java.net.URI; 
 import java.net.URISyntaxException; 
+import java.net.URL;
 import java.text.SimpleDateFormat; 
 import java.util.ArrayList; 
+import java.util.Arrays;
 import java.util.Calendar; 
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration; 
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem; 
 import org.apache.hadoop.fs.Path; 
 import org.apache.spark.SparkConf; 
@@ -20,10 +24,17 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function; 
 import org.slf4j.Logger; 
 import org.slf4j.LoggerFactory;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import com.company.commons.core.CommonFunctions;
 import com.company.commons.core.HadoopPaths;
 
+import de.l3s.boilerpipe.BoilerpipeProcessingException;
+import de.l3s.boilerpipe.document.TextDocument;
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
+import de.l3s.boilerpipe.sax.BoilerpipeSAXInput;
+import de.l3s.boilerpipe.sax.HTMLFetcher;
 import twitter4j.Paging; 
 import twitter4j.Query; 
 import twitter4j.QueryResult; 
@@ -31,6 +42,7 @@ import twitter4j.Status;
 import twitter4j.Twitter; 
 import twitter4j.TwitterException; 
 import twitter4j.TwitterFactory; 
+import twitter4j.URLEntity;
 import twitter4j.conf.ConfigurationBuilder;
 
 public class TwitterUtil {
@@ -48,79 +60,86 @@ public class TwitterUtil {
 		return tfactory.getInstance(); 
 	}
 
-	public static void searchTweets(List<String> keywords,String date){ 
+	public static void searchTweets(List<String> keywords,String date, String[] fpaths) throws IOException, URISyntaxException, InterruptedException{ 
 		int max_tweets = 3000; 
 		twitter4j.conf.Configuration conf = SocialNetworkUtils.createTwitterConfiguration();//getTwitterInstance(); 
 		TwitterFactory twitterFactory = new TwitterFactory(conf);
 		Twitter twitter = twitterFactory.getInstance();
+		Configuration configuration = new Configuration();
+		final FileSystem fs = FileSystem.get( new URI( filesPath.HDFS_URL ),configuration );
+		Path fpath = new Path(fpaths[0]);
+		if (fs.exists(fpath)) {
+			fs.delete(fpath, true);			   
+		}
 		for(String key :keywords){ 
 			boolean fileSave = false; 
-			String home = System.getProperty("user.home"); 
+			Path npath = new Path(fpaths[0]+File.separator+key);
+			FSDataOutputStream out = fs.create(npath);
+			StringBuffer fsb = new StringBuffer();
 			try { 
-				// write data into local file 
-				File file = new File(home+File.separator+key.toLowerCase()+".txt"); 
-				if(file.exists()){ 
-					log.info("File "+home+File.separator+key.toLowerCase()+".txt" + " already exists"); 
-					file.delete(); 
-					log.info("File "+home+File.separator+key.toLowerCase()+".txt" + " deleted"); 
-				} 
-				if (!file.exists()) { 
-					file.createNewFile(); 
-					log.info("File "+home+File.separator+key.toLowerCase()+".txt" + " created"); 
-				} 
-				BufferedWriter writer = new BufferedWriter(new FileWriter(file)); 
 				Query query = new Query(key.toLowerCase()); 
 				query.setLang("en"); 
 				query.setSince(date); 
 				QueryResult result; 
 				int count = 0; 
+				fsb = new StringBuffer();
 				do { 
 					result = twitter.search(query); 
 					List<Status> tweets = result.getTweets(); 
 					for (Status tweet : tweets) { 
-						writer.write(tweet.getUser().getId()+"\t"+tweet.getText()+"\n");
+						StringBuffer sb = new StringBuffer();
+						sb.append(tweet.getUser().getId());
+						sb.append("\t");
+						sb.append(tweet.getText());
+						for(URLEntity entity :tweet.getURLEntities()){
+							sb.append("\t");
+							try{
+								URL url =
+										new URL(
+												entity.getExpandedURL());
+								final InputSource is = HTMLFetcher.fetch(url).toInputSource();
+								final BoilerpipeSAXInput in = new BoilerpipeSAXInput(is);
+								final TextDocument doc = in.getTextDocument();
+								sb.append(ArticleExtractor.INSTANCE.getText(doc));
+							} catch (SAXException e) {
+								e.printStackTrace();
+							} catch (BoilerpipeProcessingException e) {
+								e.printStackTrace();
+							} catch(FileNotFoundException e){
+								e.printStackTrace();
+							} catch(IOException e){
+								e.printStackTrace();
+							} 
+						}	
+						sb.append("\n");
+//						log.info(tweet.getUser().getId()+"\t"+tweet.getText()+"\t"+Arrays.asList(tweet.getURLEntities()));
+						fsb.append(sb);
 					} 
 					count++; 
-					writer.flush(); 
+//					log.info(fsb.toString()+"   ");
+					out.writeBytes(fsb.toString());
 					Thread.sleep(65000l); 
 				} while ((query = result.nextQuery()) != null && count < max_tweets); 
-				writer.close(); 
 				fileSave = true; 
+				out.close();
 			} catch (TwitterException te) { 
 				te.printStackTrace(); 
 				log.info("Failed to search tweets: " + te.getMessage()); 
 				System.exit(-1); 
-			}catch (IOException e) { 
+			} catch (IOException e) { 
 				fileSave = false; 
 				e.printStackTrace(); 
 			} catch (InterruptedException e) { 
-				// TODO Auto-generated catch block 
 				e.printStackTrace(); 
 			} finally{ 
 				if(fileSave) 
-					log.info(home+File.separator+key+" .txt saved sucessfully"); 
+					log.info(fpaths[0]+File.separator+key+" saved sucessfully"); 
 				else 
-					log.error("Failed to save "+ home+File.separator+key+".txt"); 
-			} 
+					log.error("Failed to save "+ fpaths[0]+File.separator+key); 
+			}
+			Thread.sleep(450000l);
 		} 
-		FileSystem hdfs =null; 
-		Configuration conf1 = new Configuration(); 
-		String home = System.getProperty("user.home"); 
-		try{ 
-			hdfs = FileSystem.get( new URI( filesPath.HDFS_URL ), conf1); 
-			for(String key :keywords){ 
-				Path localFilePath = new Path(home+File.separator+key+".txt"); 
-				Path modelPath = new Path("/user/dev11"+File.separator+key+".txt"); 
-				if (hdfs.exists(modelPath)) { 
-					hdfs.delete(new Path("/user/dev11"+File.separator+key+".txt"), true); 
-				} 
-				hdfs.copyFromLocalFile(localFilePath, modelPath); 
-			} 
-		}catch(IOException e){ 
-			e.printStackTrace(); 
-		} catch (URISyntaxException e) { 
-			e.printStackTrace(); 
-		} 
+	
 	}
 
 	public static void getUsersTimeLine(String[] fpaths){ 
@@ -210,14 +229,14 @@ public class TwitterUtil {
 
 	public static void main(String[] args) { 
 		List<String> keywords = new ArrayList<String>(); 
-		keywords.add("Outlook.com"); 
+		keywords.add("Microsoft Outlook"); 
 		keywords.add("Bing"); 
 		keywords.add("OneDrive"); 
 		keywords.add("MSN"); 
 		keywords.add("Microsoft Azure"); 
 		keywords.add("Windows Live"); 
 		keywords.add("HomeOS");
-		keywords.add("Windows Media Player"); 
+		keywords.add("Windows Media Player");
 		keywords.add("Age of Empires"); 
 		keywords.add("Age of Mythology"); 
 		keywords.add("Dead Rising 3"); 
@@ -232,10 +251,10 @@ public class TwitterUtil {
 		keywords.add("Microsoft Silverlight"); 
 		keywords.add("So.cl"); 
 		keywords.add("Windows Live Mail"); 
-		keywords.add("Office 365"); 
+		keywords.add("Office 365");
 		keywords.add("Microsoft Access"); 
 		keywords.add("Microsoft OneNote"); 
-		keywords.add("Microsoft Office"); 
+		keywords.add("Microsoft Office");
 		keywords.add("Microsoft Visio"); 
 		keywords.add("Microsoft SharePoint Workspace"); 
 		keywords.add("Microsoft Project"); 
@@ -244,10 +263,19 @@ public class TwitterUtil {
 		Calendar calendar = Calendar.getInstance(); 
 		calendar.set(Calendar.YEAR, 2014); 
 		calendar.set(Calendar.MONTH, 8); 
-		calendar.set(Calendar.DAY_OF_MONTH, 10); // new years eve 
+		calendar.set(Calendar.DAY_OF_MONTH, 17); // new years eve 
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd"); 
-		TwitterUtil.searchTweets(keywords, format.format(calendar.getTime()));
-		/*String[] fpaths = {"file:///home/dev11/work/twitter_ids_full.csv","hdfs://localhost:9000/user/dev11/"}; 
-		TwitterUtil.getUsersTimeLine(fpaths); */
+		String[] fpaths = {"/user/dev11/keywords12"};
+		try {
+			TwitterUtil.searchTweets(keywords, format.format(calendar.getTime()), fpaths);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	} 
 }
