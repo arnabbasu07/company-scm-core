@@ -219,7 +219,7 @@ public class TransformRawInput {
 																		fsb.append(t._1);
 																		fsb.append("\t");
 																		fsb.append(s);
-																		fsb.append("\n");
+																		fsb.append("\n\n");
 																		set.add(words[1]);
 																	}
 																}
