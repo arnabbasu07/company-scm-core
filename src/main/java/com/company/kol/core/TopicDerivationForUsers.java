@@ -88,7 +88,7 @@ public class TopicDerivationForUsers {
 						values.add(Double.valueOf(word));
 					double value = Collections.max(values);
 					int index = values.indexOf(value);
-					out.writeBytes(StringUtils.splitPreserveAllTokens(path, "/")[StringUtils.splitPreserveAllTokens(path, "/").length-1]+"\t"+rootWords[index]);
+					out.writeBytes(StringUtils.splitPreserveAllTokens(path, "/")[StringUtils.splitPreserveAllTokens(path, "/").length-1]+"\t"+rootWords[index]+"\n");
 					out.hsync();
 				}else{
 					List<String> list = lines.collect();
@@ -104,7 +104,7 @@ public class TopicDerivationForUsers {
 					}
 					double value = Collections.max(values);
 					int index = values.indexOf(value);
-					out.writeBytes(StringUtils.splitPreserveAllTokens(path, "/")[StringUtils.splitPreserveAllTokens(path, "/").length-1]+"\t"+rootWords[index]);
+					out.writeBytes(StringUtils.splitPreserveAllTokens(path, "/")[StringUtils.splitPreserveAllTokens(path, "/").length-1]+"\t"+rootWords[index]+"\n");
 					out.hsync();
 				}
 			}
