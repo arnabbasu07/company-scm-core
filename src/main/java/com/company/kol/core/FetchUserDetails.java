@@ -67,6 +67,7 @@ public class FetchUserDetails {
 							fsb.append("\t");
 							fsb.append(words[1]);
 							fsb.append("\n");
+							System.out.println(" fsb "+ fsb.toString());
 							out.writeBytes(fsb.toString());
 							out.hsync();
 							Thread.sleep(60000l);
