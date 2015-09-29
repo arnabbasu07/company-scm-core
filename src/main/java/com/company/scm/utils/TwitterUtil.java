@@ -288,8 +288,8 @@ public class TwitterUtil {
 		keywords.add("All Assam Adivasi Suraksha Samiti");keywords.add("Gorkha Tiger Force");keywords.add("Barak Valley Youth Liberation Front");
 		keywords.add("Muslim United Liberation Tigers of Assam");keywords.add("MULTA");keywords.add("United Liberation Front of Barak Valley");keywords.add("Muslim United Liberation Front of Assam");keywords.add("MULFA");keywords.add("Muslim Security Council of Assam");
 		keywords.add("United Liberation Militia of Assam");keywords.add("ULMA");keywords.add("Islamic Liberation Army of Assam");keywords.add("ILAA");keywords.add("Muslim Volunteer Force");keywords.add("Muslim Liberation Army");
-		keywords.add("Muslim Security Force"); 	*/keywords.add("Islamic Sevak Sangh");keywords.add("Islamic United Reformation Protest of India");keywords.add("United Muslim Liberation Front of Assam");
-		keywords.add("Revolutionary Muslim Commandos");keywords.add("Muslim Tiger Force");keywords.add("People's United Liberation Front");keywords.add("Adam Sena");
+		keywords.add("Muslim Security Force"); 	keywords.add("Islamic Sevak Sangh");keywords.add("Islamic United Reformation Protest of India");keywords.add("United Muslim Liberation Front of Assam");
+		keywords.add("Revolutionary Muslim Commandos");keywords.add("Muslim Tiger Force");*/keywords.add("People's United Liberation Front");keywords.add("Adam Sena");
 		keywords.add("Harkat-ul-Mujahideen");keywords.add("Harkat-ul-Jehad");keywords.add("Lashkar-e-Omar");keywords.add("Hizb-ul-Mujahideen");keywords.add("Harkat-ul-Ansar");keywords.add("HuA, presently known as Harkat-ul Mujahideen");
 		keywords.add("Lashkar-e-Toiba");keywords.add("Jaish-e-Mohammed");keywords.add("Harkat-ul Mujahideen");keywords.add("HuM, previously known as Harkat-ul-Ansar");keywords.add("Jamait-ul-Mujahideen");
 		keywords.add("Lashkar-e-Jabbar");keywords.add("Harkat-ul-Jehad-i-Islami");keywords.add("Al Barq");keywords.add("Tehrik-ul-Mujahideen");keywords.add("Al Jehad");keywords.add("Jammu & Kashir National Liberation Army");
