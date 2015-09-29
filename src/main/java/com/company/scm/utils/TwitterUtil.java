@@ -326,7 +326,7 @@ public class TwitterUtil {
 		calendar.set(Calendar.MONTH, 9); 
 		calendar.set(Calendar.DAY_OF_MONTH, 26); // new years eve 
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd"); 
-		String[] fpaths = {"/user/dev11/keywords17"};
+		String[] fpaths = {"/user/dev11/keywords18"};
 		try {
 			TwitterUtil.searchTweets(keywords, format.format(calendar.getTime()), fpaths);
 		} catch (IOException e) {
