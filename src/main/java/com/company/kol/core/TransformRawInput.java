@@ -36,8 +36,10 @@ public class TransformRawInput {
 	static HadoopPaths filesPath;
 
 	static FSDataOutputStream out;
+	static FSDataOutputStream pout;
 	static StringBuffer fsb;
-
+	static StringBuffer pfsb;
+	static Set<String> set = new HashSet<String>();
 	public static void preprocess(String[] paths){
 		try{
 
@@ -53,6 +55,10 @@ public class TransformRawInput {
 			if(fs.exists(new Path(paths[1])))
 				fs.delete(new Path(paths[1]));
 			out = fs.create(new Path(paths[1]));
+			
+			if(fs.exists(new Path(paths[2])))
+				fs.delete(new Path(paths[2]), true);
+			pout = fs.create(new Path(paths[2]));
 			for(int i=0; i< status.length; i++){
 				JavaRDD<String> lines = CommonFunctions.getJavaRDDFromFile(ctx, status[i].getPath().toString());
 				System.out.println(" File "+ StringUtils.splitPreserveAllTokens(status[i].getPath().toString(), "/")[StringUtils.splitPreserveAllTokens(status[i].getPath().toString(), "/").length-1]+" lines count "+lines.count());
@@ -210,27 +216,35 @@ public class TransformRawInput {
 															public void call(Tuple2<Long, Iterable<String>> t)
 																	throws Exception {
 																fsb = new StringBuffer();
+																pfsb = new StringBuffer();
 																Iterator<String> it = t._2.iterator();
-																Set<String> set = new HashSet<String>();
+//																Set<String> set = new HashSet<String>();
 																while(it.hasNext()){
 																	String s = it.next();
 																	String[] words = StringUtils.splitPreserveAllTokens(s, "\t");
-																	if(!set.contains(words[1])){
+//																	if(!set.contains(words[1])){
 																		fsb.append(t._1);
 																		fsb.append("\t");
 																		fsb.append(s);
 																		fsb.append("\n\n");
-																		set.add(words[1]);
+//																		set.add(words[1]);
+//																	}
+																	if(!set.contains(words[0])){
+																		pfsb.append(words[0]);
+																		pfsb.append("\n");
 																	}
 																}
 																out.writeBytes(fsb.toString());
 																out.hsync();
+																pout.writeBytes(pfsb.toString());
+																pout.hsync();
 															}
 
 														}
 														);								
 			}
 			out.close();
+			pout.close();
 			ctx.stop();
 
 		} catch(Exception e){
@@ -240,7 +254,7 @@ public class TransformRawInput {
 
 	}
 	public static void main(String[] args) {
-		String[] fpaths = {"hdfs://hadoop-namenode:9000/user/dev11/keywords","hdfs://hadoop-namenode:9000/user/dev11/userTweets.txt"};
+		String[] fpaths = {"hdfs://hadoop-namenode:9000/user/dev11/securityKeywords","hdfs://hadoop-namenode:9000/user/dev11/securityTweets.txt","hdfs://hadoop-namenode:9000/user/dev11/profiles.txt"};
 		preprocess(fpaths);
 	}
 }
