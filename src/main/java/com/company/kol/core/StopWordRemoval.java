@@ -211,7 +211,7 @@ public class StopWordRemoval {
 		return matcher.replaceAll("");
 	}
 	public static void main(String[] args) {
-		String[] fpaths = {"hdfs://hadoop-namenode:9000/user/dev11/userTweets.txt","hdfs://hadoop-namenode:9000/user/dev11/stopwords.txt","hdfs://hadoop-namenode:9000/user/dev11/profiles"};
+		String[] fpaths = {"hdfs://hadoop-namenode:9000/user/dev11/securityTweets11.txt","hdfs://hadoop-namenode:9000/user/dev11/stopwords.txt","hdfs://hadoop-namenode:9000/user/dev11/securityProfiles11"};
 		StopWordRemoval.removeStopWords(fpaths);
 		/*StopWordRemoval stRemoval = new StopWordRemoval();
 		System.out.println("   "+ stRemoval.checkAndRemoveRetweet("asda ad 123213 1 rt @asdsad: blah blah http://t.co   #a12324 avinash12313"));*/

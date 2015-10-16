@@ -218,20 +218,21 @@ public class TransformRawInput {
 																fsb = new StringBuffer();
 																pfsb = new StringBuffer();
 																Iterator<String> it = t._2.iterator();
-//																Set<String> set = new HashSet<String>();
+																Set<String> set1 = new HashSet<String>();
 																while(it.hasNext()){
 																	String s = it.next();
 																	String[] words = StringUtils.splitPreserveAllTokens(s, "\t");
-//																	if(!set.contains(words[1])){
+																	if(!set1.contains(words[1])){
 																		fsb.append(t._1);
 																		fsb.append("\t");
 																		fsb.append(s);
 																		fsb.append("\n\n");
-//																		set.add(words[1]);
-//																	}
-																	if(!set.contains(words[0])){
-																		pfsb.append(words[0]);
+																		set1.add(words[1]);
+																	}
+																	if(!set.contains(String.valueOf(t._1))){
+																		pfsb.append(t._1);
 																		pfsb.append("\n");
+																		set.add(String.valueOf(t._1));
 																	}
 																}
 																out.writeBytes(fsb.toString());
@@ -254,7 +255,7 @@ public class TransformRawInput {
 
 	}
 	public static void main(String[] args) {
-		String[] fpaths = {"hdfs://hadoop-namenode:9000/user/dev11/securityKeywords","hdfs://hadoop-namenode:9000/user/dev11/securityTweets.txt","hdfs://hadoop-namenode:9000/user/dev11/profiles.txt"};
+		String[] fpaths = {"hdfs://hadoop-namenode:9000/user/dev11/securityKeywords","hdfs://hadoop-namenode:9000/user/dev11/securityTweets11.txt","hdfs://hadoop-namenode:9000/user/dev11/profiles111.txt"};
 		preprocess(fpaths);
 	}
 }
